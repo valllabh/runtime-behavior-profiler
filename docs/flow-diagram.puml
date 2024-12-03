@@ -1,0 +1,27 @@
+@startuml
+participant "Node Sensor" as Node
+
+box "Cluster Sensor"
+    participant "Event Listener" as EL
+    box "Runtime Behavior Profiler Lib" #LightBlue
+        participant "Event Processor" as EP
+        participant "Behavior Model Builder" as BMB
+        participant "Storage" as Storage
+    end box
+end box
+
+Node -> EL: Send raw eBPF events
+EL -> EP: Forward events for processing
+EP -> EP: Parse events
+EP -> EP: Validate events
+EP -> BMB: Forward processed events
+
+BMB -> BMB: Generate Workload Identity
+BMB -> BMB: Generate Event Identity
+BMB -> BMB: Insert event into Behaviour Profile\nif doesnot exists
+EP  <- BMB: Operation Response (Insertion, Updation)
+
+BMB ---> Storage: Store profiles and baselines
+
+
+@enduml
