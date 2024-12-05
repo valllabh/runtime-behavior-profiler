@@ -1,74 +1,171 @@
 package eventtype
 
 import (
-	"errors"
+	"fmt"
+
+	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/objects"
 )
 
 // func to get namespace from Event
-func (e *Event) GetNamespace() (string, error) {
-	process, err := e.GetProcess()
+func (e *Event) GetNamespace() (Namespace, error) {
+
+	resource, err := e.getResource("kubernetes.namespace")
+
 	if err != nil {
-		return "", err
+		return Namespace{}, err
 	}
-	return process.Pod.Namespace, nil
+
+	return Namespace{
+		Name: resource.Name,
+	}, nil
 }
 
 // func to get pod from Event
 func (e *Event) GetPod() (Pod, error) {
-	process, err := e.GetProcess()
+	resource, err := e.getResource("kubernetes.pod")
+
 	if err != nil {
 		return Pod{}, err
 	}
-	return process.Pod, nil
+
+	return Pod{
+		Name: resource.Name,
+	}, nil
 }
 
 // func to get container from Event
 func (e *Event) GetContainer() (Container, error) {
-	process, err := e.GetProcess()
-	if err != nil {
-		return Container{}, err
+	var container *objects.Container
+	switch e.GetType() {
+	case "FILE_EVENT":
+		container = e.OCSF_1_0_0.FileActivity.Actor.Process.Container
+	case "NETWORK_EVENT":
+		container = e.OCSF_1_0_0.NetworkActivity.Actor.Process.Container
+	case "PROCESS_EVENT":
+		container = e.OCSF_1_0_0.ProcessActivity.Actor.Process.Container
 	}
-	return process.Pod.Container, nil
+
+	if container == nil {
+		return Container{}, fmt.Errorf("container not found")
+	}
+
+	return Container{
+		Name:  container.Name,
+		Image: Image{Name: container.Image.Name},
+	}, nil
 }
 
 // func to get Process from Event
 func (e *Event) GetProcess() (Process, error) {
+	var process *objects.Process
+	switch e.GetType() {
+	case "FILE_EVENT":
+		process = e.OCSF_1_0_0.FileActivity.Actor.Process
+	case "NETWORK_EVENT":
+		process = e.OCSF_1_0_0.NetworkActivity.Actor.Process
+	case "PROCESS_EVENT":
+		process = e.OCSF_1_0_0.ProcessActivity.Actor.Process
 
-	// for process kprobe event
-	if e.ProcessKprobe.Process.ExecID != "" {
-		return e.ProcessKprobe.Process, nil
 	}
 
-	// for process exit event
-	if e.ProcessExit.Process.ExecID != "" {
-		return e.ProcessExit.Process, nil
+	if process == nil {
+		return Process{}, fmt.Errorf("process not found")
 	}
 
-	// for process exec event
-	if e.ProcessExec.Process.ExecID != "" {
-		return e.ProcessExec.Process, nil
-	}
-
-	// return error if no process found
-	return Process{}, errors.New("no process found in event")
+	return Process{
+		Binary:    process.Name,
+		Arguments: process.CmdLine,
+	}, nil
 }
 
 // func to get Parent from Event
 func (e *Event) GetParent() (Process, error) {
-	// for process kprobe event
-	if e.ProcessKprobe.Process.ExecID != "" {
-		return e.ProcessKprobe.Parent, nil
+	var process *objects.Process
+	var tyepee string = e.GetType()
+
+	if tyepee == "" {
+		return Process{}, fmt.Errorf("event type not found")
 	}
 
-	// for process exit event
-	if e.ProcessExit.Process.ExecID != "" {
-		return e.ProcessExit.Parent, nil
+	switch tyepee {
+	case "FILE_EVENT":
+		process = e.OCSF_1_0_0.FileActivity.Actor.Process.ParentProcess
+	case "NETWORK_EVENT":
+		process = e.OCSF_1_0_0.NetworkActivity.Actor.Process.ParentProcess
+	case "PROCESS_EVENT":
+		process = e.OCSF_1_0_0.ProcessActivity.Actor.Process.ParentProcess
 	}
 
-	// for process exec event
-	if e.ProcessExec.Process.ExecID != "" {
-		return e.ProcessExec.Parent, nil
+	if process == nil {
+		return Process{
+			Binary: "root",
+		}, nil
 	}
 
-	return Process{}, errors.New("no parent process found in event")
+	return Process{
+		Binary:    process.Name,
+		Arguments: process.CmdLine,
+	}, nil
+}
+
+func (e *Event) GetType() string {
+	if e.OCSF_1_0_0 == nil {
+		return ""
+	}
+
+	if e.OCSF_1_0_0.FileActivity != nil {
+		return "FILE_EVENT"
+	}
+
+	if e.OCSF_1_0_0.NetworkActivity != nil {
+		return "NETWORK_EVENT"
+	}
+
+	if e.OCSF_1_0_0.ProcessActivity != nil {
+		return "PROCESS_EVENT"
+	}
+
+	return ""
+}
+
+func (e *Event) getResource(t string) (*Resource, error) {
+	switch e.GetType() {
+	case "FILE_EVENT":
+		return e.FileActivityGetResource(t)
+
+	case "NETWORK_EVENT":
+		return e.NetworkActivityGetResource(t)
+
+	case "PROCESS_EVENT":
+		return e.ProcessActivityGetResource(t)
+	}
+
+	return nil, fmt.Errorf("resource of type %s not found", t)
+}
+
+func (e *Event) FileActivityGetResource(t string) (*Resource, error) {
+	for _, resource := range e.OCSF_1_0_0.FileActivity.Resources {
+		if resource.Type == t {
+			return resource, nil
+		}
+	}
+	return nil, fmt.Errorf("resource of type %s not found", t)
+}
+
+func (e *Event) NetworkActivityGetResource(t string) (*Resource, error) {
+	for _, resource := range e.OCSF_1_0_0.NetworkActivity.Resources {
+		if resource.Type == t {
+			return resource, nil
+		}
+	}
+	return nil, fmt.Errorf("resource of type %s not found", t)
+}
+
+func (e *Event) ProcessActivityGetResource(t string) (*Resource, error) {
+	for _, resource := range e.OCSF_1_0_0.ProcessActivity.Resources {
+		if resource.Type == t {
+			return resource, nil
+		}
+	}
+	return nil, fmt.Errorf("resource of type %s not found", t)
 }

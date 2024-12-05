@@ -1,85 +1,61 @@
 package eventtype
 
-import "time"
+import (
+	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/events/network"
+	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/events/system"
+)
 
 // These structs are shared across all event types.
 
 type Event struct {
-	ProcessKprobe ProcessKprobe `json:"process_kprobe,omitempty"`
-	ProcessExit   ProcessExit   `json:"process_exit,omitempty"`
-	ProcessExec   ProcessExec   `json:"process_exec,omitempty"`
-	NodeName      string        `json:"node_name"`
-	Time          time.Time     `json:"time"`
+	OCSF_1_0_0 *OCSF_1_0_0 `json:"ocsf_1_0_0,omitempty"`
+}
+
+type OCSF_1_0_0 struct {
+	FileActivity    *FileActivity    `json:"file_activity,omitempty"`
+	NetworkActivity *NetworkActivity `json:"network_activity,omitempty"`
+	ProcessActivity *ProcessActivity `json:"process_activity,omitempty"`
+}
+
+type FileActivity struct {
+	system.FileActivity
+	Resources []*Resource `json:"resources"`
+}
+
+type NetworkActivity struct {
+	network.NetworkActivity
+	Resources []*Resource `json:"resources"`
+}
+
+type ProcessActivity struct {
+	system.ProcessActivity
+	Resources []*Resource `json:"resources"`
+}
+
+type Resource struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	UID  string `json:"uid"`
 }
 
 type Process struct {
-	ExecID       string    `json:"exec_id"`
-	PID          int       `json:"pid"`
-	UID          int       `json:"uid"`
-	CWD          string    `json:"cwd"`
-	Binary       string    `json:"binary"`
-	Arguments    string    `json:"arguments"`
-	Flags        string    `json:"flags"`
-	StartTime    time.Time `json:"start_time"`
-	AUID         int       `json:"auid"`
-	Pod          Pod       `json:"pod"`
-	Docker       string    `json:"docker"`
-	ParentExecID string    `json:"parent_exec_id"`
-	Refcnt       int       `json:"refcnt,omitempty"`
+	Binary    string `json:"binary"`
+	Arguments string `json:"arguments"`
 }
 
-type Pod struct {
-	Namespace string                 `json:"namespace"`
-	Name      string                 `json:"name"`
-	Container Container              `json:"container"`
-	PodLabels map[string]interface{} `json:"pod_labels,omitempty"`
-}
-
-type Container struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Image     Image     `json:"image"`
-	StartTime time.Time `json:"start_time"`
-	PID       int       `json:"pid"`
-}
-
-type Image struct {
-	ID   string `json:"id"`
+type Namespace struct {
 	Name string `json:"name"`
 }
 
-// PROCESSKPROBE STRUCTS
-// These structs are specific to ProcessKprobe events.
-
-type ProcessKprobe struct {
-	Process      Process     `json:"process"`
-	Parent       Process     `json:"parent"`
-	FunctionName string      `json:"function_name"`
-	Args         []Argument  `json:"args"`
-	Return       ReturnValue `json:"return"`
-	Action       string      `json:"action"`
+type Pod struct {
+	Name string `json:"name"`
 }
 
-type Argument struct {
-	StringArg string `json:"string_arg"`
+type Container struct {
+	Name  string `json:"name"`
+	Image Image  `json:"image"`
 }
 
-type ReturnValue struct {
-	IntArg int `json:"int_arg"`
-}
-
-// PROCESSEXIT STRUCTS
-// These structs are specific to ProcessExit events.
-
-type ProcessExit struct {
-	Process Process `json:"process"`
-	Parent  Process `json:"parent"`
-}
-
-// PROCESSEXEC STRUCTS
-// These structs are specific to ProcessExec events.
-
-type ProcessExec struct {
-	Process Process `json:"process"`
-	Parent  Process `json:"parent"`
+type Image struct {
+	Name string `json:"name"`
 }
