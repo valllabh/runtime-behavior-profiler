@@ -18,9 +18,12 @@ func TestProcessEvent(t *testing.T) {
 	defer file.Close()
 
 	var events []eventtype.Event
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&events); err != nil {
-		t.Fatalf("failed to decode JSON: %v", err)
+	data, err := os.ReadFile("../../testdata/raw_events.json")
+	if err != nil {
+		t.Fatalf("failed to read file: %v", err)
+	}
+	if err := json.Unmarshal(data, &events); err != nil {
+		t.Fatalf("failed to unmarshal JSON: %v", err)
 	}
 
 	if len(events) == 0 {
@@ -32,6 +35,7 @@ func TestProcessEvent(t *testing.T) {
 
 	// Process each event
 	for _, event := range events {
+
 		_, err := ProcessEvent(event, cbp)
 
 		// fail test if error

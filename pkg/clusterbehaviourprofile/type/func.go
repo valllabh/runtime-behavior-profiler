@@ -1,8 +1,10 @@
 package clusterbehaviourprofiletype
 
 import (
+	"log"
 	eventtype "runtime-behavior-profiler/pkg/event/type"
 	"runtime-behavior-profiler/pkg/util"
+	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -19,19 +21,20 @@ const (
 // pods, containers, and processes. If any of these entities do not exist in the profile,
 // they are created and added to the appropriate parent entity.
 func (cbp *ClusterBehaviourProfile) Add(rawEvent eventtype.Event) error {
+	startTime := time.Now()
 
 	// Namespace
 	namespaceRaw, err := rawEvent.GetNamespace()
 	if err != nil {
 		return err
 	}
-	namespaceKey := key(namespaceType, namespaceRaw)
+	namespaceKey := key(namespaceType, namespaceRaw.Name)
 
 	namespace, ok := cbp.Namespaces[namespaceKey]
 
 	if !ok {
 		namespace = Namespace{
-			Name: namespaceRaw,
+			Name: namespace.Name,
 			Pods: map[string]Pod{},
 		}
 		cbp.Namespaces[namespaceKey] = namespace
@@ -110,6 +113,9 @@ func (cbp *ClusterBehaviourProfile) Add(rawEvent eventtype.Event) error {
 	}
 
 	util.Noop(process)
+
+	elapsedTime := time.Since(startTime)
+	log.Printf("Add function took %s", elapsedTime)
 
 	return nil
 }
