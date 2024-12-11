@@ -3,7 +3,6 @@ package eventprocessor
 import (
 	"encoding/json"
 	"os"
-	"runtime-behavior-profiler/pkg/clusterbehaviourprofile"
 	eventtype "runtime-behavior-profiler/pkg/event/type"
 	"testing"
 )
@@ -17,7 +16,7 @@ func TestProcessEvent(t *testing.T) {
 	}
 	defer file.Close()
 
-	var events []eventtype.Event
+	var events []eventtype.OCSFEvent
 	data, err := os.ReadFile("../../testdata/raw_events.json")
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)
@@ -30,13 +29,15 @@ func TestProcessEvent(t *testing.T) {
 		t.Fatalf("no events found in the file")
 	}
 
-	// Get the cluster behaviour profile
-	cbp := clusterbehaviourprofile.GetClusterBehaviourProfile("cluster1")
+	cluster := eventtype.Cluster{
+		Name:       "test-cluster",
+		Namespaces: map[string]*eventtype.Namespace{},
+	}
 
 	// Process each event
 	for _, event := range events {
 
-		_, err := ProcessEvent(event, cbp)
+		_, err := ProcessEvent(&event, &cluster)
 
 		// fail test if error
 		if err != nil {
@@ -45,7 +46,7 @@ func TestProcessEvent(t *testing.T) {
 	}
 
 	// Print
-	json, err := json.MarshalIndent(cbp, "", "  ")
+	json, err := json.MarshalIndent(cluster, "", "  ")
 	if err != nil {
 		t.Fatalf("failed to marshal cluster behaviour profile: %v", err)
 	}

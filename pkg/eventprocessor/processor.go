@@ -1,7 +1,8 @@
 package eventprocessor
 
 import (
-	clusterbehaviourprofiletype "runtime-behavior-profiler/pkg/clusterbehaviourprofile/type"
+	"encoding/json"
+	"fmt"
 	eventtype "runtime-behavior-profiler/pkg/event/type"
 	eventprocessortype "runtime-behavior-profiler/pkg/eventprocessor/type"
 )
@@ -10,10 +11,17 @@ import (
 // It extracts and organizes the event data into a hierarchical structure of namespaces,
 // pods, containers, and processes. If any of these entities do not exist in the profile,
 // they are created and added to the appropriate parent entity.
-func ProcessEvent(event eventtype.Event, cbp clusterbehaviourprofiletype.ClusterBehaviourProfile) (eventprocessortype.ProcessEventResult, error) {
+func ProcessEvent(event *eventtype.OCSFEvent, cluster *eventtype.Cluster) (eventprocessortype.ProcessEventResult, error) {
 
 	// Add the event to the ClusterBehaviourProfile
-	err := cbp.Add(event)
+	sinkResult, err := cluster.SinkEvent(event)
+
+	// Pring the sinkResult in JSON
+	sinkResultJSON, err := json.Marshal(sinkResult)
+
+	// Print the sinkResultJSON
+	_, err = fmt.Println(string(sinkResultJSON))
+
 	if err != nil {
 		return eventprocessortype.ProcessEventResult{}, err
 	}

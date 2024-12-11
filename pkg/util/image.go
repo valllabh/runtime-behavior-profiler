@@ -9,23 +9,34 @@ import "strings"
 func ExtractImageParts(image string) (string, string, string) {
 	var registry, repository, tag string
 
-	// Split into main parts: registry/repo and tag
-	parts := strings.Split(image, ":")
-	if len(parts) == 2 {
+	// Split image by `@` for digests
+	if strings.Contains(image, "@") {
+		parts := strings.SplitN(image, "@", 2)
+		image = parts[0]
 		tag = parts[1]
+	} else if strings.Contains(image, ":") {
+		// Split for tags (considering port numbers and image tags)
+		lastColonIndex := strings.LastIndex(image, ":")
+		if lastColonIndex > strings.Index(image, "/") {
+			// Colon belongs to the tag
+			tag = image[lastColonIndex+1:]
+			image = image[:lastColonIndex]
+		} else {
+			// No tag provided; use default
+			tag = "latest"
+		}
 	} else {
-		tag = "latest" // Default tag
+		tag = "latest" // Default tag if none provided
 	}
 
-	imageParts := strings.Split(parts[0], "/")
-
-	// Determine if registry is included
-	if len(imageParts) > 2 || strings.Contains(imageParts[0], ".") || strings.Contains(imageParts[0], ":") {
+	// Split into registry and repository
+	imageParts := strings.SplitN(image, "/", 2)
+	if len(imageParts) > 1 && (strings.Contains(imageParts[0], ".") || strings.Contains(imageParts[0], ":")) {
 		registry = imageParts[0]
-		repository = strings.Join(imageParts[1:], "/")
+		repository = imageParts[1]
 	} else {
-		registry = "" // Default registry
-		repository = parts[0]
+		registry = "" // Default registry is implied
+		repository = image
 	}
 
 	return registry, repository, tag
