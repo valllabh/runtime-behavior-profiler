@@ -11,7 +11,7 @@ func TestExtractImageParts(t *testing.T) {
 		repository string
 		tag        string
 	}{
-		{"registry/repository/image:tag", "registry", "repository/image", "tag"},
+		{"repository/repository/image:tag", "", "repository/repository/image", "tag"},
 		{"repository/image:tag", "", "repository/image", "tag"},
 		{"image:tag", "", "image", "tag"},
 		{"docker.io/my-repo/test-image:latest", "docker.io", "my-repo/test-image", "latest"},
@@ -28,6 +28,14 @@ func TestExtractImageParts(t *testing.T) {
 		{"myregistry.azurecr.io/test-repo/sample-app:staging", "myregistry.azurecr.io", "test-repo/sample-app", "staging"},
 		{"myregistry.azurecr.io/test-repo/test-image:latest", "myregistry.azurecr.io", "test-repo/test-image", "latest"},
 		{"myregistry.azurecr.io/test-repo/test-image", "myregistry.azurecr.io", "test-repo/test-image", "latest"},
+		{"qregistry:8080/ikhanqualys/performance", "qregistry:8080", "ikhanqualys/performance", "latest"},
+		{"qregistry:8080/ikhanqualys/performance:celery", "qregistry:8080", "ikhanqualys/performance", "celery"},
+		{"qregistry:8080/ikhanqualys/performance@sha256:4c1c50d0ffc614f90b93b07d778028dc765548e823f676fb027f61d281ac380d", "qregistry:8080", "ikhanqualys/performance", "sha256:4c1c50d0ffc614f90b93b07d778028dc765548e823f676fb027f61d281ac380d"},
+		{"docker.io/ikhanqualys/performance:celery", "docker.io", "ikhanqualys/performance", "celery"},
+		{"ikhanqualys/performance:celery", "", "ikhanqualys/performance", "celery"},
+		{"qregistry:8080/ikhanqualys/a/b/c/d/e/f/performance:celery", "qregistry:8080", "ikhanqualys/a/b/c/d/e/f/performance", "celery"},
+		{"art-hq.intranet.qualys.com:5006/secure/oraclelinux:8-slim", "art-hq.intranet.qualys.com:5006", "secure/oraclelinux", "8-slim"},
+		{"art-hq.intranet.qualys.com:5001/cs/build/golang-cgo:oel8", "art-hq.intranet.qualys.com:5001", "cs/build/golang-cgo", "oel8"},
 	}
 
 	for _, test := range tests {

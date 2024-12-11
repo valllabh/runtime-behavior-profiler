@@ -3,38 +3,75 @@ package eventtype
 import (
 	"fmt"
 
+	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/events/network"
+	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/events/system"
 	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/objects"
 )
 
+type OCSFEvent struct {
+	OCSF_1_0_0 *OCSF_1_0_0 `json:"ocsf_1_0_0,omitempty"`
+}
+
+type OCSF_1_0_0 struct {
+	FileActivity    *FileActivity    `json:"file_activity,omitempty"`
+	NetworkActivity *NetworkActivity `json:"network_activity,omitempty"`
+	ProcessActivity *ProcessActivity `json:"process_activity,omitempty"`
+}
+
+type FileActivity struct {
+	system.FileActivity
+	Resources []*Resource `json:"resources"`
+}
+
+type NetworkActivity struct {
+	network.NetworkActivity
+	Resources []*Resource `json:"resources"`
+}
+
+type ProcessActivity struct {
+	system.ProcessActivity
+	Resources []*Resource `json:"resources"`
+}
+
+type Resource struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	UID  string `json:"uid"`
+}
+
+// Functions
+
 // func to get namespace from Event
-func (e *Event) GetNamespace() (Namespace, error) {
+func (e *OCSFEvent) GetNamespace() (*Namespace, error) {
 
 	resource, err := e.getResource("kubernetes.namespace")
 
 	if err != nil {
-		return Namespace{}, err
+		return nil, err
 	}
 
-	return Namespace{
+	return &Namespace{
 		Name: resource.Name,
+		Pods: map[string]*Pod{},
 	}, nil
 }
 
 // func to get pod from Event
-func (e *Event) GetPod() (Pod, error) {
+func (e *OCSFEvent) GetPod() (*Pod, error) {
 	resource, err := e.getResource("kubernetes.pod")
 
 	if err != nil {
-		return Pod{}, err
+		return nil, err
 	}
 
-	return Pod{
-		Name: resource.Name,
+	return &Pod{
+		Name:       resource.Name,
+		Containers: map[string]*Container{},
 	}, nil
 }
 
 // func to get container from Event
-func (e *Event) GetContainer() (Container, error) {
+func (e *OCSFEvent) GetContainer() (*Container, error) {
 	var container *objects.Container
 	switch e.GetType() {
 	case "FILE_EVENT":
@@ -46,17 +83,20 @@ func (e *Event) GetContainer() (Container, error) {
 	}
 
 	if container == nil {
-		return Container{}, fmt.Errorf("container not found")
+		return nil, fmt.Errorf("container not found")
 	}
 
-	return Container{
-		Name:  container.Name,
-		Image: Image{Name: container.Image.Name},
+	return &Container{
+		Name: container.Name,
+		Image: &Image{
+			Repo: container.Image.Name,
+		},
+		Processes: map[string]*Process{},
 	}, nil
 }
 
 // func to get Process from Event
-func (e *Event) GetProcess() (Process, error) {
+func (e *OCSFEvent) GetProcess() (*Process, error) {
 	var process *objects.Process
 	switch e.GetType() {
 	case "FILE_EVENT":
@@ -69,22 +109,23 @@ func (e *Event) GetProcess() (Process, error) {
 	}
 
 	if process == nil {
-		return Process{}, fmt.Errorf("process not found")
+		return nil, fmt.Errorf("process not found")
 	}
 
-	return Process{
-		Binary:    process.Name,
-		Arguments: process.CmdLine,
+	return &Process{
+		Binary:         process.Name,
+		Arguments:      process.CmdLine,
+		ChildProcesses: map[string]*Process{},
 	}, nil
 }
 
 // func to get Parent from Event
-func (e *Event) GetParent() (Process, error) {
+func (e *OCSFEvent) GetParentProcess() (*Process, error) {
 	var process *objects.Process
 	var tyepee string = e.GetType()
 
 	if tyepee == "" {
-		return Process{}, fmt.Errorf("event type not found")
+		return nil, fmt.Errorf("event type not found")
 	}
 
 	switch tyepee {
@@ -97,18 +138,19 @@ func (e *Event) GetParent() (Process, error) {
 	}
 
 	if process == nil {
-		return Process{
+		return &Process{
 			Binary: "root",
 		}, nil
 	}
 
-	return Process{
-		Binary:    process.Name,
-		Arguments: process.CmdLine,
+	return &Process{
+		Binary:         process.Name,
+		Arguments:      process.CmdLine,
+		ChildProcesses: map[string]*Process{},
 	}, nil
 }
 
-func (e *Event) GetType() string {
+func (e *OCSFEvent) GetType() string {
 	if e.OCSF_1_0_0 == nil {
 		return ""
 	}
@@ -128,7 +170,7 @@ func (e *Event) GetType() string {
 	return ""
 }
 
-func (e *Event) getResource(t string) (*Resource, error) {
+func (e *OCSFEvent) getResource(t string) (*Resource, error) {
 	switch e.GetType() {
 	case "FILE_EVENT":
 		return e.FileActivityGetResource(t)
@@ -143,7 +185,7 @@ func (e *Event) getResource(t string) (*Resource, error) {
 	return nil, fmt.Errorf("resource of type %s not found", t)
 }
 
-func (e *Event) FileActivityGetResource(t string) (*Resource, error) {
+func (e *OCSFEvent) FileActivityGetResource(t string) (*Resource, error) {
 	for _, resource := range e.OCSF_1_0_0.FileActivity.Resources {
 		if resource.Type == t {
 			return resource, nil
@@ -152,7 +194,7 @@ func (e *Event) FileActivityGetResource(t string) (*Resource, error) {
 	return nil, fmt.Errorf("resource of type %s not found", t)
 }
 
-func (e *Event) NetworkActivityGetResource(t string) (*Resource, error) {
+func (e *OCSFEvent) NetworkActivityGetResource(t string) (*Resource, error) {
 	for _, resource := range e.OCSF_1_0_0.NetworkActivity.Resources {
 		if resource.Type == t {
 			return resource, nil
@@ -161,7 +203,7 @@ func (e *Event) NetworkActivityGetResource(t string) (*Resource, error) {
 	return nil, fmt.Errorf("resource of type %s not found", t)
 }
 
-func (e *Event) ProcessActivityGetResource(t string) (*Resource, error) {
+func (e *OCSFEvent) ProcessActivityGetResource(t string) (*Resource, error) {
 	for _, resource := range e.OCSF_1_0_0.ProcessActivity.Resources {
 		if resource.Type == t {
 			return resource, nil
