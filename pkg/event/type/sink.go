@@ -20,7 +20,7 @@ const (
 // SinkOperationInserted indicates that a new entity was inserted into the Cluster.
 // SinkOperationUpdated indicates that an existing entity was updated in the Cluster.
 // The SinkResult struct contains the operation and the path to the entity that was inserted or updated.
-func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
+func (cluster *Cluster) SinkEvent(rawEvent IEvent) (*SinkResult, error) {
 	startTime := time.Now()
 
 	sinkResult := SinkResult{
@@ -31,7 +31,7 @@ func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
 	// Namespace
 	namespaceRaw, err := rawEvent.GetNamespace()
 	if err != nil {
-		return sinkResult, err
+		return nil, err
 	}
 	namespaceKey := namespaceRaw.GetKey()
 
@@ -49,7 +49,7 @@ func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
 	// Pod
 	podRaw, err := rawEvent.GetPod()
 	if err != nil {
-		return sinkResult, err
+		return nil, err
 	}
 	podKey := podRaw.GetKey()
 
@@ -66,7 +66,7 @@ func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
 	// Container
 	containerRaw, err := rawEvent.GetContainer()
 	if err != nil {
-		return sinkResult, err
+		return nil, err
 	}
 	containerKey := containerRaw.GetKey()
 
@@ -84,7 +84,7 @@ func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
 	// Parent
 	parentRaw, err := rawEvent.GetParentProcess()
 	if err != nil {
-		return sinkResult, err
+		return nil, err
 	}
 	parentRawKey := parentRaw.GetKey()
 
@@ -102,7 +102,7 @@ func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
 	// Process
 	processRaw, err := rawEvent.GetProcess()
 	if err != nil {
-		return sinkResult, err
+		return nil, err
 	}
 
 	processRawKey := processRaw.GetKey()
@@ -123,7 +123,7 @@ func (cluster *Cluster) SinkEvent(rawEvent IEvent) (SinkResult, error) {
 	elapsedTime := time.Since(startTime)
 	log.Printf("Add function took %s", elapsedTime)
 
-	return sinkResult, nil
+	return nil, nil
 }
 
 func (pod *Pod) GetName() string {

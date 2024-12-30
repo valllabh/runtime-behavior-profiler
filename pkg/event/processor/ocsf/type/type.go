@@ -1,7 +1,8 @@
-package eventtype
+package eventprocessorocsftype
 
 import (
 	"fmt"
+	eventtype "runtime-behavior-profiler/pkg/event/type"
 
 	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/events/network"
 	"github.com/valllabh/ocsf-schema-golang/ocsf/v1_0_0/events/system"
@@ -42,7 +43,7 @@ type Resource struct {
 // Functions
 
 // func to get namespace from Event
-func (e *OCSFEvent) GetNamespace() (*Namespace, error) {
+func (e *OCSFEvent) GetNamespace() (*eventtype.Namespace, error) {
 
 	resource, err := e.getResource("kubernetes.namespace")
 
@@ -50,28 +51,28 @@ func (e *OCSFEvent) GetNamespace() (*Namespace, error) {
 		return nil, err
 	}
 
-	return &Namespace{
+	return &eventtype.Namespace{
 		Name: resource.Name,
-		Pods: map[string]*Pod{},
+		Pods: map[string]*eventtype.Pod{},
 	}, nil
 }
 
 // func to get pod from Event
-func (e *OCSFEvent) GetPod() (*Pod, error) {
+func (e *OCSFEvent) GetPod() (*eventtype.Pod, error) {
 	resource, err := e.getResource("kubernetes.pod")
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &Pod{
+	return &eventtype.Pod{
 		Name:       resource.Name,
-		Containers: map[string]*Container{},
+		Containers: map[string]*eventtype.Container{},
 	}, nil
 }
 
 // func to get container from Event
-func (e *OCSFEvent) GetContainer() (*Container, error) {
+func (e *OCSFEvent) GetContainer() (*eventtype.Container, error) {
 	var container *objects.Container
 	switch e.GetType() {
 	case "FILE_EVENT":
@@ -86,17 +87,17 @@ func (e *OCSFEvent) GetContainer() (*Container, error) {
 		return nil, fmt.Errorf("container not found")
 	}
 
-	return &Container{
+	return &eventtype.Container{
 		Name: container.Name,
-		Image: &Image{
+		Image: &eventtype.Image{
 			Repo: container.Image.Name,
 		},
-		Processes: map[string]*Process{},
+		Processes: map[string]*eventtype.Process{},
 	}, nil
 }
 
 // func to get Process from Event
-func (e *OCSFEvent) GetProcess() (*Process, error) {
+func (e *OCSFEvent) GetProcess() (*eventtype.Process, error) {
 	var process *objects.Process
 	switch e.GetType() {
 	case "FILE_EVENT":
@@ -112,15 +113,15 @@ func (e *OCSFEvent) GetProcess() (*Process, error) {
 		return nil, fmt.Errorf("process not found")
 	}
 
-	return &Process{
+	return &eventtype.Process{
 		Binary:         process.Name,
 		Arguments:      process.CmdLine,
-		ChildProcesses: map[string]*Process{},
+		ChildProcesses: map[string]*eventtype.Process{},
 	}, nil
 }
 
 // func to get Parent from Event
-func (e *OCSFEvent) GetParentProcess() (*Process, error) {
+func (e *OCSFEvent) GetParentProcess() (*eventtype.Process, error) {
 	var process *objects.Process
 	var tyepee string = e.GetType()
 
@@ -138,15 +139,15 @@ func (e *OCSFEvent) GetParentProcess() (*Process, error) {
 	}
 
 	if process == nil {
-		return &Process{
+		return &eventtype.Process{
 			Binary: "root",
 		}, nil
 	}
 
-	return &Process{
+	return &eventtype.Process{
 		Binary:         process.Name,
 		Arguments:      process.CmdLine,
-		ChildProcesses: map[string]*Process{},
+		ChildProcesses: map[string]*eventtype.Process{},
 	}, nil
 }
 

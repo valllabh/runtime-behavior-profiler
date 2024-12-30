@@ -1,23 +1,26 @@
-package eventprocessor
+package eventprocessorocsf
 
 import (
 	"encoding/json"
 	"os"
+	eventprocessorocsftype "runtime-behavior-profiler/pkg/event/processor/ocsf/type"
 	eventtype "runtime-behavior-profiler/pkg/event/type"
 	"testing"
 )
 
 func TestProcessEvent(t *testing.T) {
 
+	path := "../../../../testdata/raw_events.json"
+
 	// Read events from the JSON file
-	file, err := os.Open("../../testdata/raw_events.json")
+	file, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("failed to open file: %v", err)
 	}
 	defer file.Close()
 
-	var events []eventtype.OCSFEvent
-	data, err := os.ReadFile("../../testdata/raw_events.json")
+	var events []eventprocessorocsftype.OCSFEvent
+	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)
 	}
