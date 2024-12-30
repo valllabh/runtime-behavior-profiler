@@ -6,7 +6,7 @@ before:
 
 builds:
 - id: tetragon-event-listener
-  main: ./pkg/main.go
+  main: .
   binary: tetragon-event-listener
   env:
   - CGO_ENABLED=0
