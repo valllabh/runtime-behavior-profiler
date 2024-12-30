@@ -2,6 +2,7 @@ package eventprocessortetragon
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -218,7 +219,7 @@ func ListenToEvents() error {
 			return err
 		}
 
-		println(res.GetEvent())
+		println(json.Marshal(res.GetEvent()))
 
 	}
 
