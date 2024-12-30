@@ -211,15 +211,43 @@ func ListenToEvents() error {
 	}
 
 	for {
-		res, err := stream.Recv()
+		response, err := stream.Recv()
 		if err != nil {
 			if !errors.Is(err, context.Canceled) && status.Code(err) != codes.Canceled && !errors.Is(err, io.EOF) {
 				fmt.Errorf("failed to receive events: %w", err)
 			}
 			return err
 		}
+		eventType := response.EventType()
 
-		println(json.Marshal(res.GetEvent()))
+		var event interface{}
+
+		switch eventType {
+		case tetragon.EventType_PROCESS_EXEC:
+			event = response.GetProcessExec()
+		case tetragon.EventType_PROCESS_EXIT:
+			event = response.GetProcessExit()
+		case tetragon.EventType_PROCESS_THROTTLE:
+			event = response.GetProcessThrottle()
+		case tetragon.EventType_PROCESS_LOADER:
+			event = response.GetProcessLoader()
+		case tetragon.EventType_PROCESS_KPROBE:
+			event = response.GetProcessKprobe()
+		case tetragon.EventType_PROCESS_TRACEPOINT:
+			event = response.GetProcessTracepoint()
+		case tetragon.EventType_PROCESS_UPROBE:
+			event = response.GetProcessUprobe()
+		case tetragon.EventType_PROCESS_LSM:
+			event = response.GetProcessLsm()
+		case tetragon.EventType_RATE_LIMIT_INFO:
+			event = response.GetRateLimitInfo()
+		case tetragon.EventType_TEST:
+			event = response.GetTest()
+		}
+
+		jsonEvent, _ := json.Marshal(event)
+
+		println(string(jsonEvent))
 
 	}
 
