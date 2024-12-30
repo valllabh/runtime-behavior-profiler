@@ -22,8 +22,8 @@ import (
 var (
 	Debug         bool
 	ServerAddress string
-	Timeout       time.Duration = 10 * time.Second
-	Retries       int           = 4
+	Timeout       time.Duration
+	Retries       int = 4
 	Options       eventprocessortetragontype.Opts
 )
 
