@@ -3,6 +3,7 @@ package eventtype
 type SinkOperation string
 
 const (
+	SinkOperationIgnored  SinkOperation = "IGNORED"
 	SinkOperationInserted SinkOperation = "INSERTED"
 	SinkOperationUpdated  SinkOperation = "UPDATED"
 )

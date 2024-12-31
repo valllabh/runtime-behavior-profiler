@@ -21,6 +21,15 @@ const (
 // SinkOperationUpdated indicates that an existing entity was updated in the Cluster.
 // The SinkResult struct contains the operation and the path to the entity that was inserted or updated.
 func (cluster *Cluster) SinkEvent(rawEvent IEvent) (*SinkResult, error) {
+
+	// If the raw event is nil, return an SinkOperationIgnored.
+	if rawEvent == nil {
+		return &SinkResult{
+			Operation: SinkOperationIgnored,
+			Path:      []string{},
+		}, nil
+	}
+
 	startTime := time.Now()
 
 	sinkResult := SinkResult{
